@@ -104,12 +104,29 @@ class _ChartsPageState extends State<ChartsPage> {
     super.initState();
     appController.clearHistory();
 
-
+    if (Get.arguments == null || (Get.arguments is! List) || Get.arguments.isEmpty) {
+      terminated = true;
+      return;
+    }
 
     this.chartId = Get.arguments[0];
-    this.run = appController.runs.firstWhere((element) => element["id"] == chartId);
+    try {
+      this.run = appController.runs.firstWhere(
+        (element) => element["id"] == chartId,
+        orElse: () => null
+      );
+      if (this.run == null) {
+        terminated = true;
+        return;
+      }
+    } catch (e) {
+      print("Error finding run: $e");
+      terminated = true;
+      return;
+    }
+
     var chartInfos = appController.chartInfo[this.run["project"]["id"]];
-    if(chartInfos.length < 1){
+    if(chartInfos == null || chartInfos.length < 1){
       terminated = true;
       return;
     }
@@ -214,12 +231,26 @@ class _ChartsPageState extends State<ChartsPage> {
   var paused = false;
   void loop({firstLoop=false}) async {
     if (terminated) return;
-    if(Get.arguments == null){
+    if(Get.arguments == null || (Get.arguments is! List) || Get.arguments.isEmpty){
       terminated = true;
       return;
     }
 
-    final run = appController.runs.firstWhere((element) => element["id"] == Get.arguments[0]);
+    dynamic run;
+    try {
+      run = appController.runs.firstWhere(
+        (element) => element["id"] == Get.arguments[0],
+        orElse: () => null
+      );
+      if (run == null) {
+        terminated = true;
+        return;
+      }
+    } catch (e) {
+      print("Error finding run: $e");
+      terminated = true;
+      return;
+    }
     if(!paused){
       try{
 

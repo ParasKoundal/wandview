@@ -37,11 +37,24 @@ class _ChartScreenPageState extends State<ChartScreenPage> {
 
   void loop({firstLoop=false}) async {
     if (terminated) return;
-    if(Get.arguments == null){
+    if(Get.arguments == null || (Get.arguments is! List) || Get.arguments.length < 5){
       terminated = true;
       return;
     }
-    this.run = appController.runs.firstWhere((element) => element["id"] == Get.arguments[0]);
+    try {
+      this.run = appController.runs.firstWhere(
+        (element) => element["id"] == Get.arguments[0],
+        orElse: () => null
+      );
+      if (this.run == null) {
+        terminated = true;
+        return;
+      }
+    } catch (e) {
+      print("Error finding run: $e");
+      terminated = true;
+      return;
+    }
 
     if(!paused){
 
