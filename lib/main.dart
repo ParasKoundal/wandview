@@ -19,35 +19,55 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  // if firebase auth user is not set, then signin with anonymous
-  var user = FirebaseAuth.instance.currentUser;
-  if (user == null) {
-    await FirebaseAuth.instance.signInAnonymously();
-    user = FirebaseAuth.instance.currentUser;
-  }
-  if(await FirebaseMessaging.instance.isSupported()){
-    await FirebaseMessaging.instance.requestPermission();
-  }
 
-  await FirebaseAnalytics.instance.setUserId(id:user!.uid);
-  // await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true);
-  var _prefs = await SharedPreferences.getInstance();
-  // check if appVersion (real) is the same as the one in the prefs
-  var pInfo = await PackageInfo.fromPlatform();
-  var appVersion = pInfo.version;
-  if (_prefs.getString("appVersion") != appVersion) {
-    // if not, then clear the prefs
-    _prefs.clear();
-    // and set the new appVersion
-    _prefs.setString("appVersion", appVersion);
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // if firebase auth user is not set, then signin with anonymous
+    var user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      await FirebaseAuth.instance.signInAnonymously();
+      user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        print("Failed to authenticate with Firebase");
+        return;
+      }
+    }
+
+    if(await FirebaseMessaging.instance.isSupported()){
+      await FirebaseMessaging.instance.requestPermission();
+    }
+
+    await FirebaseAnalytics.instance.setUserId(id: user.uid);
+    // await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true);
+    var _prefs = await SharedPreferences.getInstance();
+    // check if appVersion (real) is the same as the one in the prefs
+    var pInfo = await PackageInfo.fromPlatform();
+    var appVersion = pInfo.version;
+    if (_prefs.getString("appVersion") != appVersion) {
+      // if not, then clear the prefs
+      _prefs.clear();
+      // and set the new appVersion
+      _prefs.setString("appVersion", appVersion);
+    }
+
+    _prefs.setString("appSession", generateRandomString());
+    runApp(MyApp());
+
+  } catch (e, stackTrace) {
+    print("Initialization error: $e");
+    print("Stack trace: $stackTrace");
+    // Show error screen or minimal app
+    runApp(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text("Failed to initialize app: $e"),
+        ),
+      ),
+    ));
   }
-
-  _prefs.setString("appSession",generateRandomString() );
-  runApp(MyApp());
-
 }
 
 class MyApp extends StatelessWidget {

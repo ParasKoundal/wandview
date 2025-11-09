@@ -139,13 +139,13 @@ class _ChartComponentState extends State<ChartComponent>
 
           }
 
-          // try{
-          //
-          // }catch(e){
-          //   throw e;
-          // }
         }, onError: (e) {
-          throw e;
+          print("Stream error in chart: $e");
+          if (mounted) {
+            setState(() {
+              isLoaded = false;
+            });
+          }
         });
       });
     }

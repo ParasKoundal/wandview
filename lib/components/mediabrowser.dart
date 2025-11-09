@@ -191,8 +191,8 @@ class _MediaBrowserState extends State<MediaBrowserComponent>
 
   @override
   void dispose() {
-    // TODO: implement dispose
     disposed = true;
+    _debouncerTimer.cancel();
     audioPlayer.stop();
     // check if historyWatchableStream is initialized
     try{

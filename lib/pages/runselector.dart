@@ -417,6 +417,7 @@ class RunItemState extends State<RunItem> with AutomaticKeepAliveClientMixin {
   var histColors = <String, Color>{};
   var histKeys = <String>{};
   var isLoading = true;
+  Timer? _updateTimer;
   num? get lastSeenDomain {
     var appSessionId = _prefs.getString("appSession")!;
     var runName = run["name"];
@@ -502,71 +503,76 @@ class RunItemState extends State<RunItem> with AutomaticKeepAliveClientMixin {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     SharedPreferences.getInstance().then((value) {
       _prefs = value;
-      loop(firstLoop: true);
+      startUpdateLoop();
     });
-
   }
 
   var terminated = false;
   var paused = false;
 
-  void loop({firstLoop = false}) async {
-    if ((run["state"] == "finished") && !firstLoop) {
-      return;
-    }
-    if(!paused){
-      try{
+  void startUpdateLoop() async {
+    // Initial load
+    await _performUpdate(firstLoop: true);
+
+    // Start periodic updates
+    _updateTimer = Timer.periodic(Duration(seconds: 6), (timer) async {
+      if (terminated || !mounted) {
+        timer.cancel();
+        return;
+      }
+      if (run["state"] == "finished") {
+        timer.cancel();
+        return;
+      }
+      await _performUpdate(firstLoop: false);
+    });
+  }
+
+  Future<void> _performUpdate({required bool firstLoop}) async {
+    if (!paused) {
+      try {
         var vx = await widget.loadHistory(
             run["name"], run["project"]["name"], run["project"]["entityName"],
             allowCache: firstLoop,
             onProject: true,
-            previousMetrics:prevMetrics ,
-            previousSystemMetrics: prevSystemMetrics
-
-        );
+            previousMetrics: prevMetrics,
+            previousSystemMetrics: prevSystemMetrics);
 
         if (vx != null) {
           var (metrics, systemMetrics, hasChanged) = vx;
           if (metrics != null && (hasChanged || firstLoop)) {
-            // if (ranHistory.length > 5000) {
-            //   ranHistory = ranHistory.sublist(
-            //       ranHistory.length - 5000, ranHistory.length);
-            // }
             print("Gotten the data:)");
 
             this.prevMetrics = metrics;
             this.prevSystemMetrics = systemMetrics;
             print("Processed the data:)");
 
-
             var lastUpdate = this.prevMetrics.lastOrNull;
-
 
             if (firstLoop) {
               var vals = postFirstLoad(this.prevMetrics);
               print("Post-Processed the data:)");
               activeMetrics = vals[0];
-
               histKeys = vals[2];
               histColors = vals[3];
             }
 
             print("Will compute the data:)");
             var _chartData = await compute(
-                prepareChartData, PrepareChartInput(histKeys: histKeys,
-                histColors: histColors,
-                metrics: this.prevMetrics,
-                activeMetrics: activeMetrics));
+                prepareChartData,
+                PrepareChartInput(
+                    histKeys: histKeys,
+                    histColors: histColors,
+                    metrics: this.prevMetrics,
+                    activeMetrics: activeMetrics));
 
             print("Computed the data:)");
             if (this.mounted) {
               setState(() {
                 this.chartData = _chartData;
-
                 this.activeMetrics = activeMetrics;
                 this.histKeys = histKeys;
                 this.histColors = histColors;
@@ -574,8 +580,8 @@ class RunItemState extends State<RunItem> with AutomaticKeepAliveClientMixin {
                   isLoading = false;
                 }
                 if (lastUpdate != null) {
-                  double? timestamp = lastUpdate["l___timestamp"] ??
-                      lastUpdate["_timestamp"];
+                  double? timestamp =
+                      lastUpdate["l___timestamp"] ?? lastUpdate["_timestamp"];
                   if (timestamp != null) {
                     this.lastUpdatedDuration = DateTime.now().difference(
                         DateTime.fromMillisecondsSinceEpoch(
@@ -583,7 +589,6 @@ class RunItemState extends State<RunItem> with AutomaticKeepAliveClientMixin {
                   }
                 }
               });
-              // force a repaint
             }
           } else {
             if (!hasChanged) {
@@ -591,21 +596,17 @@ class RunItemState extends State<RunItem> with AutomaticKeepAliveClientMixin {
             }
           }
         }
-      }catch( e, trace){
+      } catch (e, trace) {
         print("Error: ${e}");
         print("Trace: ${trace}");
-        // rethrow;
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
+        }
       }
-    }else{
+    } else {
       print("Paused skipping logging for now");
-    }
-
-    if(!firstLoop){
-      await Future.delayed(Duration(seconds: 6));
-    }
-
-    if (!terminated && this.mounted) {
-     loop();
     }
   }
 
@@ -627,8 +628,8 @@ class RunItemState extends State<RunItem> with AutomaticKeepAliveClientMixin {
 
   @override
   void dispose() {
-    // TODO: implement dispose
     terminated = true;
+    _updateTimer?.cancel();
     super.dispose();
   }
 
@@ -998,19 +999,19 @@ class HomePage extends StatelessWidget {
                                                               project["id"]);
                                                         },
                                                         style: ButtonStyle(
-                                                          side: MaterialStateProperty.all<BorderSide>(
-                                                              BorderSide(width: 1.0, color:selected ? Colors.blueAccent : Colors.white.withOpacity(0.5))),
-                                                          padding:MaterialStateProperty.all<EdgeInsets>(
-                                                              EdgeInsets.symmetric(vertical: 5, horizontal: 15)),
-                                                          backgroundColor: MaterialStateProperty.all(
+                                                          side: WidgetStateProperty.all<BorderSide>(
+                                                              BorderSide(width: 2.0, color:selected ? Colors.blueAccent : Colors.white.withOpacity(0.5))),
+                                                          padding:WidgetStateProperty.all<EdgeInsets>(
+                                                              EdgeInsets.symmetric(vertical: 12, horizontal: 20)),
+                                                          backgroundColor: WidgetStateProperty.all(
                                                               selected? Colors.blueAccent
-                                                              : Colors.white.withOpacity(0.1)),
-                                                          foregroundColor: MaterialStateProperty.all(selected
+                                                              : Colors.white.withOpacity(0.15)),
+                                                          foregroundColor: WidgetStateProperty.all(selected
                                                               ? Colors
                                                               .white
                                                               : Colors
                                                               .white),
-
+                                                          elevation: WidgetStateProperty.all(selected ? 4.0 : 0.0),
                                                         ),
                                                         child: Text(
                                                             project[
@@ -1119,7 +1120,7 @@ class HomePage extends StatelessWidget {
                           ),
                           style: ButtonStyle(
                             backgroundColor:
-                            MaterialStateProperty.all(Colors.white),
+                            WidgetStateProperty.all(Colors.white),
                           ))
                     ],
                   ),
