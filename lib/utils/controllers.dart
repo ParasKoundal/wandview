@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:ffi';
+import 'dart:ffi' if (dart.library.html) 'package:wandview/utils/ffi_web.dart';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
