@@ -1,7 +1,4 @@
-import 'package:carousel_slider/carousel_controller.dart'  as carousel_slider;
-
 import 'dart:async';
-
 import 'dart:math';
 
 import 'package:audioplayers/audioplayers.dart';
@@ -16,8 +13,6 @@ import 'package:get/get_rx/src/rx_workers/utils/debouncer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:wandview/utils/utilities.dart';
-
-import 'package:carousel_slider/carousel_controller.dart' as carousel;
 
 import '../utils/controllers.dart';
 
@@ -66,8 +61,7 @@ class _MediaBrowserState extends State<MediaBrowserComponent>
   final audioPlayer=  AudioPlayer();
   var slicedHistory = List<dynamic>.empty(growable: true);
   var isLoaded = true;
-  // var carouselController = CarouselController();
-  var carouselController = carousel_slider.CarouselController();
+  var carouselController = CarouselController();
   var paused = false;
   var mediaSliderIndex = 0.0;
   double? get lastSeenDomain {

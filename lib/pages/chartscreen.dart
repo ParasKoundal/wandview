@@ -1,4 +1,4 @@
-import 'package:community_charts_flutter/community_charts_flutter.dart';
+import 'package:community_charts_flutter/community_charts_flutter.dart' hide Axis, TextStyle;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
