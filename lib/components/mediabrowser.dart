@@ -61,7 +61,7 @@ class _MediaBrowserState extends State<MediaBrowserComponent>
   final audioPlayer=  AudioPlayer();
   var slicedHistory = List<dynamic>.empty(growable: true);
   var isLoaded = true;
-  var carouselController = CarouselController();
+  var carouselController = CarouselSliderController();
   var paused = false;
   var mediaSliderIndex = 0.0;
   double? get lastSeenDomain {
