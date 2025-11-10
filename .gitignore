@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/.cxx/*
 /android/app/profile
 /android/app/release
+
+# macOS CocoaPods related
+**/macos/Pods/
+**/macos/Podfile.lock
+**/macos/.symlinks/
+**/macos/Flutter/ephemeral/
